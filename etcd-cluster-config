@@ -1,0 +1,158 @@
+ # create Dns server 
+ # configure /etc/hosts
+ # configure /etc/resolv.conf
+ # apt install tmux
+ # ctrl + b + % (create new window)
+ # ctrl + b + : (set option into terminal)
+ # - :setw synchronize-panes
+ # - :select-layout even-vertical
+ # ctrl + b + x (delete current window)
+##################################### 1 ##########################################
+
+# create certificates on workstation
+openssl req -newkey rsa:2048 -nodes -keyout etcd-ca.key -x509 -subj "/CN=etcd-ca" -days 365 -out etcd-ca.crt
+ 
+vim openssl-etcd-server.conf
+[req]
+req_extensions = v3_req
+distinguished_name = req_distinguished_name
+[req_distinguished_name]
+[v3_req]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+DNS.2 = mashine1
+DNS.3 = mashine2
+DNS.4 = mashine3
+DNS.5 = mashine4
+DNS.6 = mashine5
+DNS.7 = mashie1.noob.net
+DNS.8 = mashine2.noob.net
+DNS.9 = mashine3.noob.net
+DNS.10 = mashine4.noob.net
+DNS.11 = mashine5.noob.net
+
+IP.1 = 127.0.0.1
+IP.2 = 192.168.1.116
+IP.3 = 192.168.1.117
+IP.4 = 192.168.1.118
+IP.5 = 192.168.1.119
+IP.6 = 192.168.1.121
+
+openssl req -newkey rsa:2048 -nodes -keyout etcd-server.key -subj "/CN=etcd-server" -config openssl-etcd-server.conf -out etcd-server.csr
+ 
+openssl x509 -req -in etcd-server.csr -CA etcd-ca.crt -CAkey etcd-ca.key -CAcreateserial -days 3650 -extensions v3_req -extfile openssl-etcd-server.conf -out etcd-server.crt
+ 
+openssl req -newkey rsa:2048 -nodes -keyout etcd-admin.key -subj "/CN=admin" -out etcd-admin.csr
+ 
+openssl x509 -req -in etcd-admin.csr -CA etcd-ca.crt -CAkey etcd-ca.key -CAcreateserial -days 3650 -out etcd-admin.crt
+
+
+
+#######################################  2  ##########################################
+# Copy all etcd-ca.crt etcd-server.crt etcd-server.key to etcd nodes
+
+for i in mashine1 mashine2 mashine3 mashine4 mashine5; do
+scp etcd-ca.crt etcd-server.crt etcd-server.key i:/home/
+done;
+#######################################  3 ########################################## 
+
+# on all servers
+useradd -Mrs /usr/bin/nologin etcd
+
+mkdir -p /etc/etcd/certs 
+chmod 750 /etc/etcd/certs
+chmod 0640 /etc/etcd/certs/*
+mv * /etc/etcd/certs
+
+
+mkdir -p /var/lib/etcd
+chown -R etcd: /etc/etcd
+chown -R etcd: /var/lib/etcd
+chmod 0700 /var/lib/etcd
+chown -R etcd. /etc/etcd
+
+
+
+# on all servers
+apt install jq
+
+
+
+##########################################  4 ##########################################
+
+wget https://github.com/etcd-io/etcd/releases/download/v3.5.8/etcd-v3.5.8-linux-amd64.tar.gz
+tar -xzf etcd
+
+mv etcd.../etcd* /usr/local/bin
+
+											              # On All servers
+NODE_NAME=$(hostname -s)
+NODE_IPADDR=$(ip -j -p a show enp0s3| jq .[0].addr_info[0].local | sed 's/"//g')
+MASHINE1=192.168.1.116
+MASHINE2=192.168.1.117
+MASHINE3=192.168.1.119
+MASHINE4=192.168.1.118
+MASHINE5=192.168.1.121
+
+cat <<EOF > /etc/systemd/system/etcd.service
+[Unit]
+Description=etcd
+
+[Service]
+Type=notify
+User=etcd
+Restart=on-failure
+RestartSec=5s
+LimitNOFILE=50000
+TimeoutStartSec=0
+ExecStart=/usr/local/bin/etcd \\
+  --name $NODE_NAME \\
+  --data-dir /var/lib/etcd \\
+  --client-cert-auth \\
+  --peer-client-cert-auth \\
+  --cert-file /etc/etcd/certs/etcd-server.crt \\
+  --key-file /etc/etcd/certs/etcd-server.key \\
+  --trusted-ca-file /etc/etcd/certs/etcd-ca.crt \\
+  --peer-cert-file /etc/etcd/certs/etcd-server.crt \\
+  --peer-key-file /etc/etcd/certs/etcd-server.key \\
+  --peer-trusted-ca-file /etc/etcd/certs/etcd-ca.crt \\
+  --advertise-client-urls https://$NODE_IPADDR:2379 \\
+  --listen-client-urls https://localhost:2379,https://$NODE_IPADDR:2379 \\
+  --listen-peer-urls https://$NODE_IPADDR:2380 \\
+  --initial-advertise-peer-urls https://$NODE_IPADDR:2380\\
+  --initial-cluster mashine1=https://$MASHINE1:2380,mashine2=https://$MASHINE2:2380,mashine3=https://$MASHINE3:2380,mashine4=https://$MASHINE4:2380,mashine5=https://$MASHINE5:2380 \\
+  --initial-cluster-token etcd-cluster 
+  --initial-cluster-state new
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now etcd
+
+
+#################################################### 5  ####################################################
+
+# # from another system Test etcd by getting list of members
+ETCDCTL_API=3 ./etcdctl --cacert kubernetes/etcd-ca.crt --cert kubernetes/etcd-admin.crt --key kubernetes/etcd-admin.key --endpoints https://192.168.1.116:2379,https://192.168.1.117:2379,https://192.168.1.118:2379,https://192.168.1.119:2379,https://192.168.1.121:2379 -w table member list
+
+ETCDCTL_API=3 ./etcdctl --cacert kubernetes/etcd-ca.crt --cert kubernetes/etcd-admin.crt --key kubernetes/etcd-admin.key --endpoints https://192.168.1.116:2379,https://192.168.1.117:2379,https://192.168.1.118:2379,https://192.168.1.119:2379,https://192.168.1.121:2379 -w table endpoint status list
+
+ETCDCTL_API=3 ./etcdctl --cacert kubernetes/etcd-ca.crt --cert kubernetes/etcd-admin.crt --key kubernetes/etcd-admin.key --endpoints https://192.168.1.116:2379,https://192.168.1.117:2379,https://192.168.1.118:2379,https://192.168.1.119:2379,https://192.168.1.121:2379 -w table check perf
+
+ETCDCTL_API=3 ./etcdctl --cacert kubernetes/etcd-ca.crt --cert kubernetes/etcd-admin.crt --key kubernetes/etcd-admin.key --endpoints https://192.168.1.116:2379,https://192.168.1.117:2379,https://192.168.1.118:2379,https://192.168.1.119:2379,https://192.168.1.121:2379 -w table check datascale --insecure-skip-tls-verify
+
+#################################################### 6 ####################################################
+
+# add Node into existing Cluster
+# one by one change --initial-cluster-state existing and restart service and add mashine6=https://$MASHINE6:2380 at the end of --initial-cluster 
+# change --initial-cluster-state new and systemctl daemon-reload
+
+
+
+
+
+
