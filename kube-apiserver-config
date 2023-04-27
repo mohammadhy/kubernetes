@@ -1,0 +1,213 @@
+openssl req -newkey rsa:2048 -nodes -keyout kube-ca.key -x509 -subj "/CN=kubernetes-ca" -days 3650 -out kube-ca.crt
+openssl req -newkey rsa:2048 -nodes -keyout  kube-admin.key -subj "/CN=admin/O=system:masters" -out kube-admin.csr #cn = username o= group 
+openssl x509 -req -in kube-admin.csr -CA kube-ca.crt -CAkey kube-ca.key -CAcreateserial -days 3650 -out kube-admin.crt
+
+########################################################################
+
+## For Each Componnet Create key
+#kube-proxy
+openssl req -newkey rsa:2048 -nodes -keyout kube-proxy.key  -subj "/CN=sytsem:kube-proxy/O=system:node-proxier" -days 3650 -out kube-proxy.csr
+	openssl x509 -req -in kube-proxy.csr -CA kube-ca.crt -CAkey kube-ca.key -CAcreateserial -days 3650 -out kube-proxy.crt
+
+
+
+
+#kube-controller-manager 
+openssl req -newkey rsa:2048 -nodes -keyout kube-controller-manager.key  -subj "/CN=sytsem:kube-controller-manager/O=system:kube-controller-manager" -days 3650 -out kube-controller-manager.csr
+	openssl x509 -req -in kube-controller-manager.csr -CA kube-ca.crt -CAkey kube-ca.key -CAcreateserial -days 3650 -out kube-controller-manager.crt
+
+
+
+
+#kube-scheduler 
+openssl req -newkey rsa:2048 -nodes -keyout kube-scheduler.key  -subj "/CN=sytsem:kube-scheduler/O=system:scheduler" -days 3650 -out kube-scheduler.csr
+	openssl x509 -req -in kube-scheduler.csr -CA kube-ca.crt -CAkey kube-ca.key -CAcreateserial -days 3650 -out kube-scheduler.crt
+
+########################################################################
+vim openssl-kube-apiserver.conf
+[req]
+req_extensions = v3_req
+distinguished_name = req_distinguished_name
+[req_distinguished_name]
+[v3_req]
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+DNS.2 = kubernetes
+DNS.3 = kubernetes.default
+DNS.4 = kubernetes.defalut.svc
+DNS.5 = kubernetes.defalut.svc.cluster # (name cluster)
+DNS.6 = kubernetes.default.svc.cluster.local # (name cluster )
+DNS.7 = mashie6.noob.net
+DNS.8 = mashine7.noob.net
+DNS.9 = mashine8.noob.net
+DNS.10 = mashine6
+DNS.11 = mashine7
+DNS.12 = mashine8
+IP.1 = 127.0.0.1
+IP.2 = 10.10.0.1 # cidr-cluster
+IP.3 = 192.168.1.
+IP.4 = 192.168.1.
+IP.5 = 192.168.1.
+IP.6 = 192.168.1.245 # Load-Balancer
+
+
+openssl req -newkey rsa:2048 -nodes -keyout kube-apiserver.key -subj "/CN=kube-apiserver" -config openssl-kube-apiserver.conf -out kube-apiserver.csr
+openssl x509 -req -in kube-apiserver.csr -CA kube-ca.crt -CAkey kube-ca.key -CAcreateserial -days 3650 -extensions v3_req -extfile openssl-kube-apiserver.conf -out kube-apiserver.crt
+
+########################################################################
+# key apiserver connect to kubelet
+
+vim openssl-kube-apiserver-to-kubelet.conf
+[req]
+req_extensions = v3_req
+distinguished_name = req_distinguished_name
+[req_distinguished_name]
+[v3_req]
+basicConstraints = critical, CA:FALSE
+keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = clientAuth # because kubelet not a server
+
+# in all mode always apiserver is server; expect when apiserver connect to kubelet 
+
+openssl req -newkey rsa:2048 -nodes -keyout kube-apiserver-to-kubelet.key -subj "/CN=system:kube-apiserver-to-kubelet/O=system:kube-apiserver-to-kubelet" -config openssl-kube-apiserver-to-kubelet.conf -out kube-apiserver-to-kubelet.csr
+openssl x509 -req -in kube-apiserver-to-kubelet.csr -CA kube-ca.crt -CAkey kube-ca.key -CAcreateserial -days 3650 -extensions v3_req -extfile openssl-kube-apiserver-to-kubelet.conf -out kube-apiserver-to-kubelet.crt
+
+# sign token (jwt token) 
+openssl req -newkey rsa:2048 -nodes -keyout sercice-account.key -subj "/CN=service-accounts -out service-account.csr
+openssl x509 -req -in service-account.csr -CA kube-ca.crt -CAkey kube-ca.key -CAcreateserial -days 3650 -out service-account.crt
+
+## key apiserver to connect etcd
+openssl req -newkey rsa:2048 -nodes -keyout etcd-kube-api-server.key -subj "/CN=kube-apiserver" -out etcd-kube-apiserver.csr
+openssl x509 -req -in etcd-kube-apiserver.csr -CA etcd-ca.crt -CAkey etcd-ca.key -CAcreateserial -days 3650 -out etcd-kube-apiserver.crt
+
+
+kubectl completion bash > /etc/bash_completion.d/kubectl
+# for admin
+kubectl config set-cluster <name-cluster(cluster.local)> --certificate-authority=kube-ca.crt --embed-certs --server https://192.168.1.245:6443 --kubeconfig kube-admin.kubeconfig #ip loadbalancer
+kubectl config set-credentials admin --client-certificate kube-admin.crt --client-key kube-admin.key --embed-certs --kubeconfig kube-admin.kubeconfig
+kubectl config set-context default --cluster cluster.local --user admin --kubeconfig kube-admin.kubeconfig
+kubectl config use-context default --kubeconfig kube-admin.kubeconfig
+
+# for kube-controller-manager
+kubectl config set-cluster cluster.local --certificate-authority=kube-ca.crt --embed-certs --server https://192.168.1.245:6443 --kubeconfig kube-controller-manager.kubeconfig #ip loadbalancer
+kubectl config set-credentials system:kube-controller-manager --client-certificate kube-controller-manager.crt --client-key kube-controller-manager.key --embed-certs --kubeconfig kube-controller-manager.kubeconfig
+kubectl config set-contect default --cluster cluster.local --user system:kube-controller-manager --kubeconfig kube-controller-manager.kubeconfig
+kubectl config use-context default --kubeconfig kube-controller-manager.kubeconfig
+
+#for kube-scheduler
+kubectl config set-cluster cluster.local --certificate-authority=kube-ca.crt --embed-certs --server https://192.168.1.245:6443 --kubeconfig kube-scheduler.kubeconfig #ip loadbalancer
+kubectl config set-credentials system:kube-scheduler --client-certificate kube-scheduler.crt --client-key kube-scheduler.key --embed-certs --kubeconfig kube-scheduler.kubeconfig
+kubectl config set-context default --cluster cluster.local --user system:kube-scheduler --kubeconfig kube-scheduler.kubeconfig
+kubectl config use-context default --kubeconfig kube-scheduler.kubeconfig
+
+#for kube-proxy
+kubectl config set-cluster cluster.local --certificate-authority=kube-ca.crt --embed-certs --server https://192.168.1.245:6443 --kubeconfig kube-proxy.kubeconfig #ip loadbalancer
+kubectl config set-credentials system:kube-proxy --client-certificate kube-proxy.crt --client-key kube-proxy.key --embed-certs --kubeconfig kube-proxy.kubeconfig
+kubectl config set-context default --cluster cluster.local --user system:kube-proxy --kubeconfig kube-proxy.kubeconfig
+kubectl config use-context default --kubeconfig kube-proxy.kubeconfig
+
+# encrypt secrt kubernetes
+vim encryption-config.yaml
+apiVersipon: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+    - resources:
+          - secrets
+      providers:
+          - aescbc:
+                keys:
+                    - name: default
+                      secret:
+          - identity: {}            
+
+head -c 32 /dev/urandom | base64 # output set on secrect
+
+
+############################PART2#######################################
+# download apiserver
+	#on-server
+kubernetes/github > changelog >  serverbinary > kubernetes-server-linux-amd64-1.26
+wget https://dl.k8s.io/v1.26.4/kubernetes-server-linux-amd64.tar.gz
+tar -zxvf kubernetes-server-linux-amd64.tar.gz
+
+mv kubeapi-server /usr/local/bin
+
+
+mkdir -p /etc/kubernetes/certs
+mkdir -p /etc/kubernetes/configs
+mkdir -p /etc/kubernetes/manifests
+chmod -R 600 /etc/kubernetes
+
+	#on-workstation
+for i in mashine6.noob.net mashine7.noob.net mashine8.noob.net; do
+scp encryption-config.yaml sercice-account.key sercice-account.crt kube-scheduler.kubeconfig kube-scheduler.key kube-scheduler.crt kube-controller-manager.key kube-controller-manager.kubeconfig kube-ca.crt kube-controller-manager.crt kube-apiserver.key kube-apiserver.crt kube-apiserver-to-kubelet.key kube-apiserver-to-kubelet.crt etcd-ca.crt etcd-kube-apiserver.key etcd-kube-apiserver.crt  etcd-kube-apiserver.key $i:/home/user 
+done;
+
+	#on-server
+mv *.key *.crt /etc/kubernetes/certs/
+mv *.kubeconfig encryption-config.yaml /etc/kubernetes/configs/
+
+cd /etc/kubernetes 
+chown -R root: .
+#### TIP : --feture-guest= #list unstable feature to production
+
+## launch service api-server:
+apt install jq
+
+NODE_IPADDR=$(ip -j -p a show enp0s3| jq .[0].addr_info[0].local | sed 's/"//g')
+cat <<EOF > /etc/systemd/system/kube-apiserver.service
+
+[Unit]
+Description=kube-apiserver
+
+[Service]
+Restart=on-failure
+RestartSec=5s
+ExecStart=/usr/local/bin/kube-apiserver \\
+	--advertise-address=$NODE_IPADDR \\
+	--audit-log-compress=true \\
+	--audit-log-maxage=90 \\
+	--audit-log-maxbackup=10 \\
+	--audit-log-maxsize=100 \\
+	--audit-log-path=/var/log/kube-audit.log \\
+	--authorization-mode=Node,RBAC \\
+	--cert-dir=/etc/kubernetes/certs/ \\
+	--client-ca-file=/etc/kubernetes/certs/kube-ca.crt \\
+	--enable-admission-plugins=NodeRestriction \\	## if requests arrive check some plugin
+	--enable-bootstrap-token-auth=true \\
+	--encryption-provider-config=/etc/kubernetes/configs/encryption-config.yaml \\
+	--encryption-provider-config-automatic-reload=true \\
+	--etcd-cafile=/etc/kubernetes/certs/etcd-ca.crt \\
+	--etcd-certfile=/etc/kubernetes/certs/etcd-kube-apiserver.crt \\
+	--etcd-keyfile=/etc/kubernetes/certs/etcd-kube-apiserver.key \\
+	--etcd-servers=https://192.168.1.116:2379,https://192.168.1.117:2379,https://192.168.1.118:2379,https://192.168.1.119:2379,https://192.168.1.121:2379 \\
+	--kubelet-certificate-authority=/etc/kubernetes/certs/kube-ca.crt \\
+	--kubelet-client-certificate=/etc/kubernetes/certs/kube-apiserver-to-kubelet.crt \\
+	--kubelet-client-key=/etc/kubernetes/certs/kube-apiserver-to-kubelet.key \\
+	--runtime-config="api/all=true" \\
+	--service-account-issuer=kube-apiserver \\
+	--service-account-key-file=/etc/kubernetes/certs/service-account.crt \\
+	--service-account-signing-key-file=/etc/kubernetes/certs/service-account.key \\
+	--service-cluster-ip-range=10.10.0.0/16 \\
+	--tls-cert-file=/etc/kubernetes/certs/kube-apiserver.crt \\
+	--tls-min-version=VersionTLS12 \\
+	--tls-private-key-file=/etc/kubernetes/certs/kube-apiserver.key \\
+	--v=10
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable --now kube-apiserver.service
+	
+##for test change ip kube-admin.kubeconfig to a one of valid server
+
+kubectl --kubeconfig kube-admin.kubeconfig get no/ns
+
+
+
+
