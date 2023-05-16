@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{- template "name" }}
+  labels:
+{{ toYaml .Values.defaultlabels | indent 6}}
+spec:
+  replicas: {{ .Values.replicascount }}
+  selector:
+      matchLabels:
+{{ toYaml .Values.defaultlabels | indent 6 }}
+  template:
+    metadata:
+       labels:
+{{ toYaml .Values.defaultlabels | indent 8 }}
+    spec:
+        containers:
+            image: {{ .Values.imagename }}

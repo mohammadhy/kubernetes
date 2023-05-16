@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: index-nginx
+data:
+    index.html: |
+        <html>
+        <h1>Welcome</h1>
+        </br>
+        <h1>Hi! This is a configmap Index file </h1>
+        </html
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: config-nginx
+data:
+    default.conf: |
+     server {
+     listen 80;
+     server_name localhost;
+     location / {
+           root /usr/share/nginx/html;
+           index index.html;
+     }
+     }

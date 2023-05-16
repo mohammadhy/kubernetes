@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+    name: list-proccess
+spec:
+    concurrencyPolicy: Replace
+    schedule: "* * * * *"
+    jobTemplate:
+        spec:
+            ttlSecondsAfterFinished: 30
+            template:
+                spec:
+                    restartPolicy: Never
+                    containers:
+                        - image: python
+                          name: python
+                          args:
+                          -  /bin/sh
+                          -  -c
+                          -  echo It works
+

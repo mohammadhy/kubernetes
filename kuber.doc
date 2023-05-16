@@ -1,0 +1,232 @@
+================================== kubernetes ==============================
+///
+kubernetes not run any containers just manage and choose right place to run.
+
+architecture:
+control plane:
+  - control-manager
+  - scheduler
+  - api-server
+worker node:
+  - kubelet : make connection between api server and container 
+  - kube proxy : run Iptables role 
+      - user space: data from Iptables to kube-proxy
+      - Iptables: Loadbalance round-robin & Random
+      - Iptables-virtual: like Iptables But support more loadbalance method
+  - container: engine (ex: docker)
+///
+#requests send to api server and redirect to database (etcd), control manager always in running mode and scan database to proccess new data 
+#and redirect it to scheduler to run a node. 
+
+#pods are smallest object in kubernetes, its contain of one or more container all container in pods are use same database & network
+
+add-apt-repository ppa:k8s-maintainers/1.20
+apt install kubectl
+
+kubectl completion bash > /etc/bash_completion.d/kubectl
+export kubeconfig=/path/to/kube/config
+
+kubectl api-resource
+
+				(nginx.yaml)
+apiVersion: apps/v1
+kind: Deployment		Resource for (Recreate & RollingUpdate)
+metadata:
+  name: nginx-deployment	(name)
+  labels:
+    app: web
+spec:
+  selector:
+    matchLabels:		( Select multiLables )
+      app: web
+  replicas: 5			(How Many of matchLabels are create)
+  strategy:
+    type: RollingUpdate		(start new pod and delete one old version again create new version delete the other pod)
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+       -name: nginx
+          image: nginx
+          ports:
+           -containerPort: 80
+
+kubectl apply -f nginx.yaml
+kubectl delete --all pods
+
+						## Method Update Without Downtime
+
+#RollingUpdate		( start new pod and delete one old version again create new version delete the other pod)
+#Recreate 		( The old one delete and create new )
+#Craze Deploy		( create with number of new version after that delete all old version ) # impossible for morethan 10 and use many resource
+
+							## cluster ##
+cat /var/lib/rancher/k3s/server/token 
+k3s_TOKEN = 	k3s_url=https://<ip_server>:6634 ./install
+
+							## How Access To Our Pods ##
+# We use resource <Service> for access pods
+# 4 different resource :
+## 1) ClusterID: Allocate ip inside cludter and solve ehemeral problem when restart pod 
+## 2) NodePort: Allocate port to access our pod outside cluster it has all feature of clusterID
+## 3) LoadBalancer: LoadBalance betwen our node and allocate ip public 
+## 4) ExtraName: connect cluster with outside and our node can comminucate with other service oute side 
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+  labels:
+    name: nginx
+spec:
+  type: LoadBalancer			# method Service
+  ports:
+  - port: 80
+  selector:
+    name: nginx
+---
+apiVersion: apps/v1
+kind: Deployment		Resource for (Recreate & RollingUpdate)
+metadata:
+  name: nginx-deployment	(name)
+  labels:
+    name: nginx
+spec:
+  selector:
+    matchLabels:		( Select multiLables )
+      name: nginx
+  replicas: 5			(How Many of matchLabels are create)
+  strategy:
+    type: RollingUpdate		(start new pod and delete one old version again create new version delete the other pod)
+  template:
+    metadata:
+      labels:
+        name: nginx
+    spec:
+      containers:
+       -name: nginx
+          image: nginx
+          ports:
+           -containerPort: 80
+
+kubectl get svc, ep, pod
+kubectl rollout restart <type-kind> <name>
+
+
+							## Helatcheck ##
+# kubelet livenessprobe who destroyed and must be restart
+# kubelet readinessprobe when container ready to use and allow to discover
+# kubelete startupprobe when container start 
+
+# action examine heltcheck: 
+# 1) httpget
+# 2) exec
+# 3) tcpsocket
+
+apiVersion: v1
+kind: Pod		
+metadata:
+  name: nginx-deployment	(name)
+spec:
+  containers:
+    - name test-app
+      image: nginx
+      startupProbe:
+        failureThreshold: 3
+        periodSeconds: 5
+        exec:
+          command:
+            - flask
+            - app
+
+apiVersion: v1
+kind: Pod		
+metadata:
+  name: nginx-deployment	(name)
+spec:
+  containers:
+    - name test-app
+      image: nginx
+      livenessProbe:
+        failureThreshold: 3
+        periodSeconds: 5
+        tcpSocket:
+          port: 8081
+### action httpGet
+	httpGet:
+          host: localhost
+          port: 8080
+          path: /login
+							## NameSpace ##
+kubectl create ns project1-test1
+kubectl create deployment <name> <image> -n <ns>
+kubectl expose deployment -n <ns> --type <ClusterIP> --port=80 
+
+## All Teraffic input close for namespace project1-test1
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-network-policy
+  namespace: project1-test1
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+
+## All Teraffic output close for namespace project1-test1
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-network-policy
+  namespace: project1-test1
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+    
+## All Teraffic Allow Inside namespace project1-test1
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-network-policy
+  namespace: project1-test1
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+      - from:
+            - namespaceSelector:
+                  matchLables:
+                      kubernetes.io/metadata.name: project1-test1 ## terrafic allow inside namespace
+   egress:
+       - to: 
+            - namespaceSelector:
+                  matchLables:
+                      kubernetes.io/metadata.name: project1-test1
+            - podSelector: {}
+        - to: 
+             - namespaceSelector:
+                  matchLables:
+                      kubernetes.io/metadata.name: kube-system
+             - podSelector:
+                   matchlabels:
+                       k8s-app: kube-dns
+
+
+## All Teraffic output Allow for namespace project1-test1
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-network-policy
+  namespace: project1-test1
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+      - {}

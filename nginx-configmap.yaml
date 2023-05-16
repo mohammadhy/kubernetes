@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+            - name: index-volume
+              mountPath: /usr/share/nginx/html
+              
+            - name: config-volume
+              mountPath: /etc/nginx/conf.d
+      volumes:
+          - name: index-volume
+            configMap:
+                name: index-nginx
+          - name: config-volume
+            configMap:
+                name: config-nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: nginx-service
+spec:
+    type: ClusterIP
+
+    ports:
+        - port: 80
+          targetPort: 80

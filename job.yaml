@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+    name: list-user
+spec:
+    ttlSecondsAfterFinished: 30
+    template:
+        metadata:
+            labels:
+                app: list-user-mysql
+        spec:
+            restartPolicy: Never
+            containers:
+                    - image: mysql
+                      name: mysql
+                      command: ["mysql","-hmysql:3306" ,"-uroot", "-p123", "-e", "usemysql; select User from user;"]
+

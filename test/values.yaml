@@ -1,0 +1,21 @@
+name: test
+defaultlabels:
+    app.kubernetes.io/name: ltest
+    app.kubernetes.io/create_by: noob
+replicascount: 1
+
+imagename: nginx
+
+service:
+  type: ClusterIP
+  port: 80
+
+
+resources:
+   limits:
+     cpu: 100m
+     memory: 128Mi
+   requests:
+     cpu: 100m
+     memory: 128Mi
+

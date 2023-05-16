@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-update
+  labels:
+    app: web
+spec:
+  selector:
+    matchLabels:
+      app: web
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          ports:
+            - containerPort: 80
+
