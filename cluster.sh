@@ -1,1 +1,1 @@
-echo "hello github" > .env
+echo "hello github" > user/share/.env
