@@ -1,1 +1,1 @@
-echo "hello github" > user/share/.env
+export a=10
