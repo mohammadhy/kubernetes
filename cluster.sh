@@ -1,1 +1,1 @@
-export a=10
+echo "Hello From Github" > usr/share/message
