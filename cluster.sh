@@ -1,1 +1,1 @@
-echo "Hello From Github" > usr/share/message
+echo "Hello From Github" > /usr/share/message
