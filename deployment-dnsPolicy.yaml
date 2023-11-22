@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: netbank-backend
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netbank
+      app.kubernetes.io/component: backend
+      app.kubernetes.io/part-of: netbank
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: netbank
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: netbank
+    spec:
+      containers:
+      - name: netbank-backend
+        image: nginx
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 8.8.8.8
