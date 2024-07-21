@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elastic-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elastic
+  template:
+    metadata:
+      labels:
+        app: elastic
+    spec:
+      nodeName: worker
+      containers:
+        - name: elastic
+          image: 192.168.154.128:5000/elastic
+          ports:
+          - containerPort: 9200
+          env:
+          - name: cluster.name
+            value: "local"
+          - name: bootstrap.memory_lock
+            value: "true"
+          - name: discovery.type
+            value: "single-node"
+          - name: xpack.security.enabled
+            value: "true"
+          - name: ES_JAVA_OPTS
+            value: "-Xms512m -Xmx512m"
+          - name: ELASTICSEARCH_URL
+            value: "http://elasticsearch:9200"
+          - name: ELASTICS_USER
+            value: "elastic"
+          - name: ELASTIC_PASSWORD
+            value: "asus1650"
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "256m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+spec:
+  type: NodePort
+  selector:
+    app: elastic
+  ports:
+    - name: http
+      port: 9200
+      targetPort: 9200
+      nodePort: 30920

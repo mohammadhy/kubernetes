@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: backuptominio
+  namespace: db
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: backup
+            image: 192.168.154.128:5000/custome-backup:0.0.0
+
+            env:
+            - name: DBNAME
+              value: "gitea"
+            - name: DBUSER
+              value: root
+            - name: DBPASSWORD
+              value: "gitea"
+            - name: DBHOST
+              value: 10.42.2.13 
+            command:
+            - /usr/local/bin/mc alias set myminio http://192.168.154.128:9000 minioadmin minioadmin && ./script.sh

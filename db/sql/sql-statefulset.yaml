@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mysql-statefulset
+  namespace: db
+spec:
+  serviceName: mysql-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: 192.168.154.128:5000/mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: gitea
+            - name: MYSQL_USER
+              value: gitea
+            - name: MYSQL_PASSWORD
+              value: gitea
+            - name: MYSQL_DATABASE
+              value: gitea
+          volumeMounts:
+           - name: sql-data
+             mountPath: /var/lib/mysql
+          securityContext:
+            runAsUser: 999 
+            runAsGroup: 999
+      volumes:
+        - name: sql-data
+          persistentVolumeClaim:
+            claimName: sql-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+  namespace: db
+spec:
+  clusterIP: None
+  selector:
+    app: mysql
+  ports:
+  - port: 3306

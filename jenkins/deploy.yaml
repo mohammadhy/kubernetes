@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins-server
+  template:
+    metadata:
+      labels:
+        app: jenkins-server
+    spec:
+      securityContext:
+        fsGroup: 1000
+      containers:
+        - name: jenkins
+          image: 192.168.154.128:5000/jenkins-custom:1.0.0
+          ports:
+            - name: httpport
+              containerPort: 8080
+          env:
+            - name: DOCKER_HOST
+              value: tcp://docker:2376
+            - name: DOCKER_TLS_VERIFY
+              value: "1"
+          resources:
+            limits:
+              memory: "2000Mi"
+              cpu: "1000m"
+            requests:
+              memory: "500Mi"
+              cpu: "500m"
+          volumeMounts:
+          - name: jenkins-data
+            mountPath: /var/jenkins_home
+          - name: docker-client-certs
+            mountPath: /var/jenkins_home/.docker
+
+      volumes:
+      - name: jenkins-data
+        persistentVolumeClaim:
+          claimName: jenkins-pvc-data
+      - name: docker-client-certs
+        persistentVolumeClaim:
+          claimName: docker-jenkins-key-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-jenkins
+spec:
+  type: NodePort
+  selector:
+    app: jenkins-server
+  ports:
+  - name: httpport
+    port: 8080
+    targetPort: httpport
+    nodePort: 30808

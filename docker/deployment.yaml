@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-pod
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docker-service
+  template:
+    metadata:
+      labels:
+        app: docker-service
+    spec:
+      containers:
+        - name: docker
+          image: 192.168.154.128:5000/docker-dind
+          ports:
+            - name: docker-port
+              containerPort: 2376
+          args: ["--insecure-registry", "192.168.154.128:5000"]
+          securityContext:
+            privileged: true
+          volumeMounts:
+                  #- name: docker-data
+                  #mountPath: /var/lib/docker
+          - name: jenkins-data
+            mountPath: /var/jenkins_home
+          - name: certs
+            mountPath: /certs
+          - name: docker-client-certs
+            mountPath: /certs/client
+      volumes:
+      - name: jenkins-data
+        persistentVolumeClaim:
+          claimName: jenkins-pvc
+      - name: certs
+        emptyDir: {}
+        #- name: docker-data
+        #persistentVolumeClaim:
+        #  claimName: docker-pvc
+      - name: docker-client-certs
+        persistentVolumeClaim:
+          claimName: docker-jenkins-key-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker
+spec:
+  selector:
+    app: docker-service
+  ports:
+  - name: docker-port
+    protocol: TCP
+    port: 2376
+    targetPort: docker-port

@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarqube
+spec:
+  selector:
+    matchLabels:
+      app: sonarqube
+  template:
+    metadata:
+      labels:
+        app: sonarqube
+    spec:
+      containers:
+      - name: sonarqube
+        #image: sonarqube
+        image: 192.168.154.128:5000/sonarqube
+        ports:
+        - containerPort: 9000
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "256m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: service-sonarqube
+spec:
+  type: NodePort
+  selector:
+    app: sonarqube
+  ports:
+  - name: sonarqube-port
+    port: 9000
+    targetPort: 9000
+    nodePort: 30900
