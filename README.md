@@ -10,4 +10,8 @@
     kubectl create -f kube-prometheus/manifests/setup
     kubectl create -f kube-prometheus/manifests
     kubectl apply -f ../prometheus.yaml
-
+## To Enable Metallb And Ingress We Need To install:
+    kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.7/config/manifests/metallb-native.yaml
+    kubectl apply -f metallb-ip-pool.yaml
+    kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+    
