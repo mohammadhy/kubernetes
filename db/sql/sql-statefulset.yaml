@@ -19,11 +19,17 @@ spec:
           image: 192.168.154.128:5000/mysql
           env:
             - name: MYSQL_ROOT_PASSWORD
-              value: gitea
+              valueFrom:
+                secretKeyRef:
+                  name: secret-sql
+                  key: root_password
             - name: MYSQL_USER
               value: gitea
             - name: MYSQL_PASSWORD
-              value: gitea
+              valueFrom:
+                secretKeyRef:
+                  name: secret-sql
+                  key: password
             - name: MYSQL_DATABASE
               value: gitea
           volumeMounts:
