@@ -23,8 +23,12 @@ spec:
           env:
           - name: ELASTICSEARCH_URL
             value: "http://elasticsearch:9200"
+            #- name: KIBANA_USERNAME
+            #value: "elastic"
+            #- name: KIBANA_PASSWORD
+            #value: "asus1650"
           - name: ELASTICSEARCH_SERVICEACCOUNTTOKEN
-            value: "AAEAAWVsYXN0aWMva2liYW5hL215dG9rZW46WkF2S0tIQWVReEM0V19WbUdzQWZkUQ"
+            value: "AAEAAWVsYXN0aWMva2liYW5hL215dG9rZW46a0NxOXlxV0JUR09UaEpFU0hlSlZYdw"
           resources:
             limits:
               memory: "1G"
