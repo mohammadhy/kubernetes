@@ -42,6 +42,13 @@ spec:
             requests:
               memory: "256Mi"
               cpu: "256m"
+          volumeMounts:
+          - name: config
+            mountPath: /usr/share/elasticsearch/data
+      volumes:
+      - name: config
+        persistentVolumeClaim:
+          claimName: config-data
 ---
 apiVersion: v1
 kind: Service

@@ -33,7 +33,7 @@ spec:
       volumes:
       - name: jenkins-data
         persistentVolumeClaim:
-          claimName: jenkins-pvc
+          claimName: jenkins-pvc-data
       - name: certs
         emptyDir: {}
         #- name: docker-data
