@@ -12,7 +12,8 @@ spec:
       labels:
         app: elastic
     spec:
-      nodeName: worker
+    securityContext:
+      fsGroup: 1000
       containers:
         - name: elastic
           image: 192.168.154.128:5000/elastic
