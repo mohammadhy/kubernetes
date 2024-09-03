@@ -1,3 +1,13 @@
+## setup insecure registry for containerd
+       [plugins."io.containerd.grpc.v1.cri".registry]
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+        [plugins."io.containerd.grpc.v1.cri".registry.mirrors."IP:PORT"]
+          endpoint = ["http://IP:PORT"]
+        [plugins."io.containerd.grpc.v1.cri".registry.configs."IP:PORT".tls]
+          insecure_skip_verify = true
+        [plugins."io.containerd.grpc.v1.cri".registry.configs."IP:PORT".auth]
+           password = "admin"
+           username = "admin"
 ## Setup Nfs Server By Following Command:
     apt install nfs-server
     vi /etc/export
