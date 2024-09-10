@@ -1,5 +1,5 @@
      [!TIP] 
-{ Name Organaziation must be same as namespace }
+*Name Organaziation must be same as namespace*
 
     openssl genrsa -out devuser.key 2048
     openssl req -new -key devuser.key -out devuser.csr -subj "/CN=devuser/O=develop"
