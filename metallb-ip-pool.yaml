@@ -1,11 +1,11 @@
 apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
-  name: k3s-cluster
+  name: pool-address
   namespace: metallb-system
 spec:
   addresses:
-  - 192.168.154.200-192.168.154.240
+  - 192.168.1.200-192.168.1.240
 ---
 apiVersion: metallb.io/v1beta1
 kind: L2Advertisement
@@ -14,4 +14,4 @@ metadata:
   namespace: metallb-system
 spec:
   ipAddressPools:
-   - k3s-cluster
+   - pool-address
