@@ -36,3 +36,18 @@
     kubectl-argo rollouts version --kubeconfig 
 ## Find PID And DockerID
     with top and htop we can find most pid use more cpu then on path /proc/<pid>/cpuset find containerID then on path /sys/fs/cgroup/system.slice/<containerID>
+## SonarQube
+   Create Key On Sonarqube
+   Install Plugins On Jenkins
+   1) go to system
+   2) Section SonarQube servers
+   3) Put Ip Address Sonar
+   4) Put Key On Credentials
+           stage('Sonarqube'){ 
+            steps{ 
+                withSonarQubeEnv('Sonar-Server-8.9.2'){ 
+                    sh ''' gradle sonar ''' 
+                }
+            }
+        }
+   6) 
