@@ -43,10 +43,3 @@
    2) Section SonarQube servers
    3) Put Ip Address Sonar
    4) Put Key On Credentials
-   stage('Sonarqube'){ 
-     steps{ 
-        withSonarQubeEnv('Sonar-Server-8.9.2'){ 
-          sh ''' gradle sonar ''' 
-                }
-            }
-        }
