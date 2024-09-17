@@ -43,3 +43,4 @@
    2) Section SonarQube servers
    3) Put Ip Address Sonar
    4) Put Key On Credentials
+   /var/lib/jenkins/sonar-cli/bin/sonar-scanner -Dsonar.projectKey=<Project-Name> -Dsonar.sources=.  -Dsonar.exclusions=<file/folder not scan>
