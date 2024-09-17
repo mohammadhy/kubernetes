@@ -45,6 +45,6 @@
    4) Put Key On Credentials
    5) EX For Python : /var/lib/jenkins/sonar-cli/bin/sonar-scanner -Dsonar.projectKey=<Project-Name> -Dsonar.sources=.  -Dsonar.exclusions=<file/folder not scan>
 ## Mysql-Operator
-   kubectl apply -f https://raw.githubusercontent.com/mysql/mysql-operator/trunk/deploy/deploy-crds.yaml
-   kubectl apply -f https://raw.githubusercontent.com/mysql/mysql-operator/trunk/deploy/deploy-operator.yaml
-   Change storageclass to default
+    kubectl apply -f https://raw.githubusercontent.com/mysql/mysql-operator/trunk/deploy/deploy-crds.yaml
+    kubectl apply -f https://raw.githubusercontent.com/mysql/mysql-operator/trunk/deploy/deploy-operator.yaml
+    Change storageclass to default
