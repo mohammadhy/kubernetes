@@ -20,6 +20,13 @@
     helm repo update
     helm install prometheus prometheus-community/kube-prometheus-stack
     Check Selector By following command kubectl get prometheus.monitoring.coreos.com -o yaml 
+    helm show values prometheus-community/kube-prometheus-stack > values.yaml
+        alertmanagerConfigSelector:
+       matchLabels:
+         release: prometheus-stack
+    helm upgrade prometheus-stack prometheus-community/kube-prometheus-stack -f values.yaml
+
+
 ## To Enable Metallb And Ingress We Need To install:
     kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.7/config/manifests/metallb-native.yaml
     kubectl apply -f metallb-ip-pool.yaml
