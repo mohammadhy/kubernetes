@@ -66,3 +66,7 @@
         labelSelector:
           matchLabels:
             app: my-service
+## Move Image Docker To Containerd:
+   docker save -o image.tar <image-name>
+   sudo scp IP:<PATH> image.tar
+   sudo ctr -n=k8s.io images import image.tar
