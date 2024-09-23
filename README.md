@@ -25,7 +25,8 @@
        matchLabels:
          release: prometheus-stack
     helm upgrade prometheus-stack prometheus-community/kube-prometheus-stack -f values.yaml
-    This is Simple ServiceMonitor
+    This is Simple ServiceMonitor:
+    ------------------------------------
     apiVersion: monitoring.coreos.com/v1
     kind: ServiceMonitor
     metadata:
