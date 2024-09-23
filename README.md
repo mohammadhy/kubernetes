@@ -25,7 +25,24 @@
        matchLabels:
          release: prometheus-stack
     helm upgrade prometheus-stack prometheus-community/kube-prometheus-stack -f values.yaml
-
+    This is Simple ServiceMonitor
+    apiVersion: monitoring.coreos.com/v1
+    kind: ServiceMonitor
+    metadata:
+    labels:
+      release: prometheus-stack
+    name: servicemonitor-python-web-app
+    namespace: stage
+    spec:
+      endpoints:
+      - interval: 30s
+        port: web
+      selector:
+        matchLabels:
+         app: python-log
+      namespaceSelector:
+        matchNames:
+        - stage
 
 ## To Enable Metallb And Ingress We Need To install:
     kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.14.7/config/manifests/metallb-native.yaml
