@@ -85,9 +85,9 @@
           matchLabels:
             app: my-service
 ## Move Image Docker To Containerd:
-   docker save -o image.tar <image-name>
-   sudo scp IP:<PATH> image.tar
-   sudo ctr -n=k8s.io images import image.tar
+    docker save -o image.tar <image-name>
+    sudo scp IP:<PATH> image.tar
+    sudo ctr -n=k8s.io images import image.tar
 ## Use Trivy Offline Scanner
     snap install oras --classic
     oras cp ghcr.io/aquasecurity/trivy-db:2 192.168.1.104:5000/trivy/trivy-db:2
