@@ -90,5 +90,5 @@
     sudo ctr -n=k8s.io images import image.tar
 ## Use Trivy Offline Scanner
     snap install oras --classic
-    oras cp ghcr.io/aquasecurity/trivy-db:2 192.168.1.104:5000/trivy/trivy-db:2
-   
+    oras cp ghcr.io/aquasecurity/trivy-db:2 --to-plain-http 192.168.1.104:5000/trivy/trivy-db:2
+    TRIVY_USERNAME=YOUR_USERNAME TRIVY_PASSWORD=YOUR_PASSWORD trivy image --db-repository 192.168.1.104:5000/trivy/trivy-db:2 -f json -o trivy.json 192.168.1.104:5000/python-web-app:v1 
