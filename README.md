@@ -92,3 +92,9 @@
     snap install oras --classic
     oras cp ghcr.io/aquasecurity/trivy-db:2 --to-plain-http 192.168.1.104:5000/trivy/trivy-db:2
     TRIVY_USERNAME=YOUR_USERNAME TRIVY_PASSWORD=YOUR_PASSWORD trivy image --db-repository 192.168.1.104:5000/trivy/trivy-db:2 -f json -o trivy.json 192.168.1.104:5000/python-web-app:v1 
+## Use Loki & Grafana To Logging 
+    helm repo add grafana https://grafana.github.iohelm-chart
+    helm show values  grafana/loki-stack  > values.yaml Set Grafana: True
+    helm install --values values.yaml loki grafana/loki-stack
+    kubectl get secrets loki-grafana -o json {.data.admin-password} | base64 -d
+    
