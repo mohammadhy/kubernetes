@@ -98,3 +98,7 @@
     helm install --values values.yaml loki grafana/loki-stack
     kubectl get secrets loki-grafana -o json {.data.admin-password} | base64 -d
     
+## Use Metrics-server 
+    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/high-availability-1.21+.yaml
+    kubectl -n kube-system edit deployment metrics-server
+    - --kubelet-insecure-tls
