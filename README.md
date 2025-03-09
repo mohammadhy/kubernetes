@@ -1,4 +1,4 @@
-## setup insecure registry for containerd
+## setup insecure registry for containerd (DEPRECATED)
        [plugins."io.containerd.grpc.v1.cri".registry]
       [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
         [plugins."io.containerd.grpc.v1.cri".registry.mirrors."IP:PORT"]
@@ -8,6 +8,15 @@
         [plugins."io.containerd.grpc.v1.cri".registry.configs."IP:PORT".auth]
            password = "admin"
            username = "admin"
+           --------------
+    vim /etc/containerd/certs.d/docker.io/hosts.toml
+    server = "http://192.168.1.105:5000"
+    [host."http://192.168.1.105:5000"]
+      capabilities = ["pull","resolve", "push"]
+      skip_verify = true
+      override_path = false
+      username = admin
+      password = "123"
 ## Setup Nfs Server By Following Command:
     apt install nfs-server
     vi /etc/export
