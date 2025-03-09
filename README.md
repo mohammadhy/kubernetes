@@ -8,7 +8,7 @@
         [plugins."io.containerd.grpc.v1.cri".registry.configs."IP:PORT".auth]
            password = "admin"
            username = "admin"
-           --------------
+## setup insecure registry for containerd (NEW)
     vim /etc/containerd/certs.d/docker.io/hosts.toml
     server = "http://192.168.1.105:5000"
     [host."http://192.168.1.105:5000"]
