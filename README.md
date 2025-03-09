@@ -15,7 +15,7 @@
       capabilities = ["pull","resolve", "push"]
       skip_verify = true
       override_path = false
-      username = admin
+      username = "admin"
       password = "123"
 ## Setup Nfs Server By Following Command:
     apt install nfs-server
