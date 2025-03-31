@@ -109,5 +109,11 @@
     
 ## Use Metrics-server 
     kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/high-availability-1.21+.yaml
+## Use Gvisor As Runtime 
+    change config.toml And Add 
+            [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runsc]
+          runtime_type = "io.containerd.runsc.v1"
+          [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runsc.options]
+            binaryName = "/usr/local/bin/runsc"
     kubectl -n kube-system edit deployment metrics-server
     - --kubelet-insecure-tls
